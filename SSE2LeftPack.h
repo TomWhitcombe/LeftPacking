@@ -4,7 +4,7 @@
     Left Packing based on the SSE2 implementation from Andreas Fredrikson's GDC talk:
     https://www.gdcvault.com/play/1022248/SIMD-at-Insomniac-Games-How
 
-    In it Andreas' talks about using move distances to figure out the selection masks. I didn't really follow that in all 
+    In it Andreas talks about using move distances to figure out the selection masks. I didn't really follow that in all 
     honesty. Instead, I worked out the selection masks via Eyeball 1.0. It was actually quite a cathartic puzzle to solve for the
     16 different combinations. I've left this here to show my work in each of them.
 
@@ -14,204 +14,206 @@
     eg- 0010 isn't index 2, but index 4 (0100).
 */
 
-// ================
-// 0000
-// ABCD
+/*
+================
+0000
+ABCD
 
-// BCDA
-// 0000
-// ABCD
+BCDA
+0000
+ABCD
 
-// CDBA
-// 0000
+CDBA
+0000
 
-// ================
-// 0001 Conceptual Index (actual is 1000)
-// ABCD value
+================
+0001 Conceptual Index (actual is 1000)
+ABCD value
 
-// BCDA val rot 1
-// 0010 first select mask
-// ABDD select into value, alias tempVal
+BCDA val rot 1
+0010 first select mask
+ABDD select into value, alias tempVal
 
-// DDAB rotate tempVal 2
-// 1000 select into tempVal
-// DBDD BOOM
-// You may ask what about the BDD? Well that gets discarded by popcnt of the mask- wonderful
+DDAB rotate tempVal 2
+1000 select into tempVal
+DBDD BOOM
+You may ask what about the BDD? Well that gets discarded by popcnt of the mask- wonderful
 
-// ================
-// 0010
-// ABCD value
+================
+0010
+ABCD value
 
-// BCDA rot 1
-// 0000 select mask 0
-// ABCD None are selected, but this is still tempVal
+BCDA rot 1
+0000 select mask 0
+ABCD None are selected, but this is still tempVal
 
-// CDAB rotate tempVal twice
-// 1000 select mask 1 into tempVal
-// CBCD BOOM
+CDAB rotate tempVal twice
+1000 select mask 1 into tempVal
+CBCD BOOM
 
-// ================
-// 0011
-// ABCD
+================
+0011
+ABCD
 
-// BCDA
-// 0000 select 0
-// ABCD apply select mask to val, alias tempVal
+BCDA
+0000 select 0
+ABCD apply select mask to val, alias tempVal
 
-// CDAB rotate tempVal twice
-// 1100 select mask
-// CDCD BOOM
+CDAB rotate tempVal twice
+1100 select mask
+CDCD BOOM
 
-// ================
-// 0100
-// ABCD
+================
+0100
+ABCD
 
-// BCDA
-// 1000 select 0
-// BBCD apply select mask, alias result to tempVal- you get the picture
+BCDA
+1000 select 0
+BBCD apply select mask, alias result to tempVal- you get the picture
 
-// CDBB rot 2
-// 0000 select 1
+CDBB rot 2
+0000 select 1
 
-// BBCD
+BBCD
 
-// ================
-// 0101
-// ABCD
+================
+0101
+ABCD
 
-// BCDA
-// 1000
-// BBCD
+BCDA
+1000
+BBCD
 
-// CDBB
-// 0100
+CDBB
+0100
 
-// BDCD
+BDCD
 
-// ================
-// 0110
-// ABCD
+================
+0110
+ABCD
 
-// BCDA
-// 1100
-// BCCD
+BCDA
+1100
+BCCD
 
-// CDBC
-// 0000
+CDBC
+0000
 
-// BCCD
+BCCD
 
-// ================
-// 0111
-// ABCD
+================
+0111
+ABCD
 
-// BCDA
-// 1110
-// BCDD
+BCDA
+1110
+BCDD
 
-// DDBC
-// 0000
+DDBC
+0000
 
-// BCDD
+BCDD
 
-// ================
-// 1000
-// ABCD
+================
+1000
+ABCD
 
-// BCDA
-// 0000
-// ABCD
+BCDA
+0000
+ABCD
 
-// CDAB
-// 0000
+CDAB
+0000
 
-// ABCD
-// ================
-// 1001
-// ABCD
+ABCD
+================
+1001
+ABCD
 
-// BCDA
-// 0000
-// ABCD
+BCDA
+0000
+ABCD
 
-// CDAB
-// 0100
+CDAB
+0100
 
-// ADCD
+ADCD
 
-// ================
-// 1010
-// ABCD
+================
+1010
+ABCD
 
-// BCDA
-// 0100
-// ACCD
+BCDA
+0100
+ACCD
 
-// CDAC
-// 0000
+CDAC
+0000
 
-// ================
-// 1011
-// ABCD
+================
+1011
+ABCD
 
-// BCDA
-// 0110
-// ACDD
+BCDA
+0110
+ACDD
 
-// DDAC
-// 0000
+DDAC
+0000
 
-// ACDD
+ACDD
 
-// ================
-// 1100
-// ABCD
+================
+1100
+ABCD
 
-// BCDA
-// 0000
-// ABCD
+BCDA
+0000
+ABCD
 
-// CDAB
-// 0000
+CDAB
+0000
 
-// ABCD
-// ================
-// 1101
-// ABCD
+ABCD
+================
+1101
+ABCD
 
-// BCDA
-// 0010
-// ABDD
+BCDA
+0010
+ABDD
 
-// DDAB
-// 0000
+DDAB
+0000
 
-// ================
-// 1110
-// ABCD
+================
+1110
+ABCD
 
-// BCDA
-// 0000
-// ABCD
+BCDA
+0000
+ABCD
 
-// CDAB
-// 0000
+CDAB
+0000
 
-// ABCD
+ABCD
 
-// ================
-// 1111
-// BCDA
-// 0000
-// ABCD
+================
+1111
+BCDA
+0000
+ABCD
 
-// CDAB
-// 0000
+CDAB
+0000
 
-// ABCD
+ABCD
 
-// ================
+================
 
+*/
 #define SELECTION_MASK(a, b, c, d) 0xFFFFFFFF * a, 0xFFFFFFFF * b, 0xFFFFFFFF * c, 0xFFFFFFFF * d
 
 static __m128 _mm_leftPack_ps(__m128 value, __m128 mask)
@@ -250,6 +252,3 @@ static __m128 _mm_leftPack_ps(__m128 value, __m128 mask)
 
     return result;
 }
-
-//#undef MASK_ONE
-//#undef SELECTION_MASK
