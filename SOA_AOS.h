@@ -6,6 +6,7 @@ typedef struct vec2Out
     __m128 a,b;
 } vec2Out_t;
 
+// The reason I've called it a and b rather than x and y is because this should work either way around; going for xxxx yyyy to xyxy xyxy or vice versa. x makes no sense when it contains 2 xy pairs
 static vec2Out_t vec2Transpose(__m128 a, __m128 b)
 {
     vec2Out_t out;
